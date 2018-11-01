@@ -196,6 +196,10 @@ int main(int argc, char** argv) {
 
     wstring name(driverName.begin(), driverName.end());
 
+    wstring wDriverName = name.substr(0, name.size() - 4);
+    // unload if already existing
+    UnloadDriver(wDriverName.c_str());
+
     if (!CreateDriverFile(name.c_str())) {
         cout << "failed to copy driver file to drivers folder" << endl;
         return 0;
