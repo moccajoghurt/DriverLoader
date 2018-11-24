@@ -1,2 +1,2 @@
 # DriverLoader
-General purpose tool to loads drivers with NtLoadDriver
+General purpose tool to load drivers with NtLoadDriver
