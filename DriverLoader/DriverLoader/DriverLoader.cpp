@@ -118,7 +118,7 @@ NTSTATUS UnloadDriver(const wchar_t* driverName) {
     NTSTATUS status;
     status = NtUnloadDriver(&sourceRegistryUnicode);
 
-    printf("NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
+    printf("[+] NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
 
     RemoveDriverFromRegistry(driverName);
 
@@ -131,12 +131,12 @@ BOOL LoadDriver(wstring driverName) {
 
     BOOLEAN alreadyEnabled = FALSE;
     if (RtlAdjustPrivilege(SeLoadDriverPrivilege, 1ull, AdjustCurrentProcess, &alreadyEnabled) != STATUS_SUCCESS && !alreadyEnabled) {
-        cout << "LoadDriver::RtlAdjustPrivilege failed" << endl;
+        cout << "[-] LoadDriver::RtlAdjustPrivilege failed" << endl;
         return FALSE;
     }
 
     if (AddServiceToRegistry(driverName.c_str()) != STATUS_SUCCESS) {
-        cout << "LoadDriver::AddServiceToRegistry failed" << endl;
+        cout << "[-] LoadDriver::AddServiceToRegistry failed" << endl;
         return FALSE;
     }
 
@@ -148,11 +148,9 @@ BOOL LoadDriver(wstring driverName) {
     sourceRegistryUnicode.MaximumLength = (USHORT)(sourceRegistry.size() + 1) * 2;
 
     NTSTATUS status = NtLoadDriver(&sourceRegistryUnicode);
-
-    printf("NtLoadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
-
     if (status != STATUS_SUCCESS) {
-        cout << "NtLoadDriver() failed." << endl;
+        cout << "[-] NtLoadDriver() failed." << endl;
+        printf("[-] NtLoadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
         UnloadDriver(driverName.c_str());
         RemoveDriverFromRegistry(driverName.c_str());
         return FALSE;
@@ -201,24 +199,23 @@ int main(int argc, char** argv) {
     UnloadDriver(driverNameWithoutFileEnding.c_str());
 
     if (!MoveFileToDriversFolder(name.c_str())) {
-        cout << "failed to copy driver file to drivers folder" << endl;
+        cout << "[-] Failed to copy driver file to drivers folder" << endl;
         return 0;
     }
 
     wstring pdbName = driverNameWithoutFileEnding + wstring(L".pdb");
     if (!MoveFileToDriversFolder(pdbName.c_str())) {
-        cout << "failed to copy pdb file to drivers folder" << endl;
-        return 0;
+        cout << "[-] Failed to copy pdb file to drivers folder. No pdb provided?" << endl;
     }
 
     name = name.substr(0, name.size() - 4);
 
-    wcout << "registering Driver: " << name << endl;
+    wcout << "[+] Registering Driver: " << name << endl;
     if (LoadDriver(name)) {
-        cout << "Successfully loaded driver" << endl;
+        cout << "[+] Successfully loaded driver" << endl;
     }
     else {
-        cout << "Loading driver failed" << endl;
+        cout << "[-] Loading driver failed" << endl;
     }
     return 1;
 }
