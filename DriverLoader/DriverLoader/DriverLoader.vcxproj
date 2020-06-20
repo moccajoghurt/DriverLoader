@@ -146,6 +146,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NtDefines.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DriverLoader.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GoToHardwareWebSiteIcon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
