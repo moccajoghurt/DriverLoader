@@ -22,7 +22,7 @@ wstring GetDriverPath() {
     return driverPath;
 }
 
-BOOL CreateDriverFile(const wchar_t* driverName) {
+BOOL MoveFileToDriversFolder(const wchar_t* driverName) {
     wstring driverPath = GetDriverPath() + driverName;
     DeleteFileW(driverPath.c_str()); // delete existing
     ifstream src(driverName, ios::binary);
@@ -112,8 +112,8 @@ NTSTATUS UnloadDriver(const wchar_t* driverName) {
 
     UNICODE_STRING sourceRegistryUnicode = { 0 };
     sourceRegistryUnicode.Buffer = (wchar_t*)sourceRegistry.c_str();
-    sourceRegistryUnicode.Length = (sourceRegistry.size()) * 2;
-    sourceRegistryUnicode.MaximumLength = (sourceRegistry.size() + 1) * 2;
+    sourceRegistryUnicode.Length = (USHORT)(sourceRegistry.size()) * 2;
+    sourceRegistryUnicode.MaximumLength = (USHORT)(sourceRegistry.size() + 1) * 2;
 
     NTSTATUS status;
     status = NtUnloadDriver(&sourceRegistryUnicode);
@@ -144,8 +144,8 @@ BOOL LoadDriver(wstring driverName) {
 
     UNICODE_STRING sourceRegistryUnicode = { 0 };
     sourceRegistryUnicode.Buffer = (wchar_t*)sourceRegistry.c_str();
-    sourceRegistryUnicode.Length = (sourceRegistry.size()) * 2;
-    sourceRegistryUnicode.MaximumLength = (sourceRegistry.size() + 1) * 2;
+    sourceRegistryUnicode.Length = (USHORT)(sourceRegistry.size()) * 2;
+    sourceRegistryUnicode.MaximumLength = (USHORT)(sourceRegistry.size() + 1) * 2;
 
     NTSTATUS status = NtLoadDriver(&sourceRegistryUnicode);
 
@@ -196,12 +196,18 @@ int main(int argc, char** argv) {
 
     wstring name(driverName.begin(), driverName.end());
 
-    wstring wDriverName = name.substr(0, name.size() - 4);
+    wstring driverNameWithoutFileEnding = name.substr(0, name.size() - 4);
     // unload if already existing
-    UnloadDriver(wDriverName.c_str());
+    UnloadDriver(driverNameWithoutFileEnding.c_str());
 
-    if (!CreateDriverFile(name.c_str())) {
+    if (!MoveFileToDriversFolder(name.c_str())) {
         cout << "failed to copy driver file to drivers folder" << endl;
+        return 0;
+    }
+
+    wstring pdbName = driverNameWithoutFileEnding + wstring(L".pdb");
+    if (!MoveFileToDriversFolder(pdbName.c_str())) {
+        cout << "failed to copy pdb file to drivers folder" << endl;
         return 0;
     }
 
