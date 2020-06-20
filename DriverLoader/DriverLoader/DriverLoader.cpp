@@ -22,11 +22,11 @@ wstring GetDriverPath() {
     return driverPath;
 }
 
-BOOL MoveFileToDriversFolder(const wchar_t* driverName) {
-    wstring driverPath = GetDriverPath() + driverName;
-    DeleteFileW(driverPath.c_str()); // delete existing
-    ifstream src(driverName, ios::binary);
-    ofstream dest(driverPath, ios::binary | ios::out);
+BOOL MoveFileToDriversFolder(const wchar_t* fileName, const wchar_t* filePath) {
+    wstring driverDestinationPath = GetDriverPath() + fileName;
+    DeleteFileW(driverDestinationPath.c_str()); // delete existing
+    ifstream src(filePath, ios::binary);
+    ofstream dest(driverDestinationPath, ios::binary | ios::out);
     dest << src.rdbuf();
     if (!dest.good()) {
         return FALSE;
@@ -181,45 +181,59 @@ HANDLE OpenDevice(string driverName) {
 
 int main(int argc, char** argv) {
     if (argc != 2) {
-        cout << "usage DriverInstaller.exe DriverName" << endl;
-        wcout << L"Driver will be copied to: " << GetDriverPath() << endl;
-        cin.ignore();
+        cout << "[+] Usage DriverInstaller.exe DriverName" << endl;
+        wcout << L"[+] Driver will be copied to: " << GetDriverPath() << endl;
+        system("PAUSE");
         return 0;
     }
-    string driverName(argv[1]);
 
-    size_t loc = driverName.find(".sys");
-    if (loc == string::npos) {
-        driverName += ".sys";
+    if (!PathFileExistsA(argv[1])) {
+        cout << "[-] File does not exist: " << argv[1] << endl;
+        system("PAUSE");
+        return 0;
+    }
+    
+    char drive[_MAX_PATH];
+    char directory[_MAX_DIR];
+    char filename[_MAX_FNAME];
+    char extension[_MAX_EXT];
+
+    _splitpath_s(argv[1], drive, directory, filename, extension);
+
+    if (string(extension).find(".sys") == string::npos) {
+        cout << "[-] File is not a .sys file" << endl;
+        system("PAUSE");
+        return 0;
     }
 
-    wstring name(driverName.begin(), driverName.end());
+    string driverName = string(filename) + string(extension);
+    wstring driverNameW(driverName.begin(), driverName.end());
 
-    wstring driverNameWithoutFileEnding = name.substr(0, name.size() - 4);
-    // unload if already existing
+    wstring driverNameWithoutFileEnding = driverNameW.substr(0, driverNameW.size() - 4);
     UnloadDriver(driverNameWithoutFileEnding.c_str());
 
-    if (!MoveFileToDriversFolder(name.c_str())) {
+    string driverPath(argv[1]);
+    wstring driverPathW(driverPath.begin(), driverPath.end());
+    if (!MoveFileToDriversFolder(driverNameW.c_str(), driverPathW.c_str())) {
         cout << "[-] Failed to copy driver file to drivers folder" << endl;
-        cin.ignore();
+        system("PAUSE");
         return 0;
     }
 
     wstring pdbName = driverNameWithoutFileEnding + wstring(L".pdb");
-    if (!MoveFileToDriversFolder(pdbName.c_str())) {
-        cout << "[-] Failed to copy pdb file to drivers folder. No pdb provided?" << endl;
+    wstring pdbPath = driverPathW.substr(0, driverPathW.size() - 4) + wstring(L".pdb");
+    if (!MoveFileToDriversFolder(pdbName.c_str(), pdbPath.c_str())) {
+        cout << "[-] Failed to copy pdb file to drivers folder. No pdb provided? Pdb must reside in same folder as .sys file." << endl;
     }
 
-    name = name.substr(0, name.size() - 4);
-
-    wcout << "[+] Registering Driver: " << name << endl;
-    if (LoadDriver(name)) {
+    wcout << "[+] Registering Driver: " << driverNameW << endl;
+    if (LoadDriver(driverNameWithoutFileEnding)) {
         cout << "[+] Successfully loaded driver" << endl;
     }
     else {
         cout << "[-] Loading driver failed" << endl;
     }
 
-    cin.ignore();
+    system("PAUSE");
     return 1;
 }
