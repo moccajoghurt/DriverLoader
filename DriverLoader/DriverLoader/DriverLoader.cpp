@@ -183,6 +183,7 @@ int main(int argc, char** argv) {
     if (argc != 2) {
         cout << "usage DriverInstaller.exe DriverName" << endl;
         wcout << L"Driver will be copied to: " << GetDriverPath() << endl;
+        cin.ignore();
         return 0;
     }
     string driverName(argv[1]);
@@ -200,6 +201,7 @@ int main(int argc, char** argv) {
 
     if (!MoveFileToDriversFolder(name.c_str())) {
         cout << "[-] Failed to copy driver file to drivers folder" << endl;
+        cin.ignore();
         return 0;
     }
 
@@ -217,5 +219,7 @@ int main(int argc, char** argv) {
     else {
         cout << "[-] Loading driver failed" << endl;
     }
+
+    cin.ignore();
     return 1;
 }
