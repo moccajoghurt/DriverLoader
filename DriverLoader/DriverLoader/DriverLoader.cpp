@@ -24,7 +24,13 @@ wstring GetDriverPath() {
 
 BOOL MoveFileToDriversFolder(const wchar_t* fileName, const wchar_t* filePath) {
     wstring driverDestinationPath = GetDriverPath() + fileName;
-    DeleteFileW(driverDestinationPath.c_str()); // delete existing
+    if (PathFileExistsW(driverDestinationPath.c_str())) {
+        if (!DeleteFileW(driverDestinationPath.c_str())) {
+            wcout << L"[-] Could not delete existing file: " << driverDestinationPath << endl;
+            return FALSE;
+        }
+        wcout << "[+] Successfully removed existing file: " << driverDestinationPath << endl;
+    }
     ifstream src(filePath, ios::binary);
     ofstream dest(driverDestinationPath, ios::binary | ios::out);
     dest << src.rdbuf();
